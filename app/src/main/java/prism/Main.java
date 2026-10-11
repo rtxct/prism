@@ -49,7 +49,7 @@ public class Main {
         try {
             if (args.length == 0) {
                 log.log(Level.FINE, "No arguments " +
-                        "provided, check --help for system usages");
+                        "provided, check --help for system usages.");
                 return;
             }
 
@@ -60,6 +60,13 @@ public class Main {
                 Command[] commands = ProcedureCaller
                         .assertAndGetDaemonCall(Arrays.copyOfRange(args, 1, args.length));
 
+                if (Objects.isNull(commands[0].getCommand())) {
+                    if (Objects.equals(commands[0].getSubCommands()[0], Main.STOP_CMD)) {
+                        throw new DaemonDownOnCommandException("Daemon was requested to " +
+                                "be stopped (\"stop\" command) during startup, check --help for system usages.");
+                    }
+                }
+
                 log.info("Daemon mode " +
                         "identified. Starting the process.");
 
@@ -67,12 +74,12 @@ public class Main {
                 return;
             }
 
-            if (Files.exists(DaemonOperation.getSocketPath())) {
+            if (Files.exists(SocketServer.getSocketPath())) {
                 log.info("Daemon socket found. Forwarding call to the Daemon process.");
 
                 try (SocketChannel client = SocketChannel.open(StandardProtocolFamily.UNIX)) {
                     client.connect(UnixDomainSocketAddress
-                            .of(DaemonOperation.getSocketPath()));
+                            .of(SocketServer.getSocketPath()));
 
                     String line = String.join(" ", args) + "\n";
                     client.write(ByteBuffer.wrap(line.getBytes(StandardCharsets.UTF_8)));
@@ -83,6 +90,13 @@ public class Main {
 
             Command[] commands = ProcedureCaller
                     .assertAndGetExecutionerCall(args);
+
+            if (Objects.isNull(commands[0].getCommand())) {
+                if (Objects.equals(commands[0].getSubCommands()[0], Main.STOP_CMD)) {
+                    throw new CommandNotFoundException("The \"stop\" command is not a valid " +
+                            "call for the Executioner operation, check --help for system usages.");
+                }
+            }
 
             log.info("Single execution " +
                     "mode identified. Starting the process.");

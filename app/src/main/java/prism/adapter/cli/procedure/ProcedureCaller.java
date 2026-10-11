@@ -98,7 +98,7 @@ public class ProcedureCaller {
 
         arg = expandArgs(arg)[0];
 
-        boolean daemonRunning = Files.exists(DaemonOperation.getSocketPath());
+        boolean daemonRunning = Files.exists(SocketServer.getSocketPath());
         String[] daemonCmds = AppCommandType.getDaemonCmds();
         String[] daemonOnlyCmds = AppCommandType.getDaemonNonPolymathCmds();
 
@@ -137,6 +137,11 @@ public class ProcedureCaller {
      * @throws IllegalStateException if a daemon-only command is found
      */
     public static Command[] assertAndGetExecutionerCall(String... args) {
+        Command[] intiList = assertStopCall(args);
+        if (Objects.nonNull(intiList)) {
+            return intiList;
+        }
+
         return assertAndGetCommands(
                 AppCommandType.getDaemonNonPolymathCmds(), "Daemon command %s, should not be " +
                         "used as a single execution system command. Check --help for system usages.", args);
@@ -151,9 +156,25 @@ public class ProcedureCaller {
      * @throws IllegalStateException if a single-execution-only command is found
      */
     public static Command[] assertAndGetDaemonCall(String... args) {
+        Command[] intiList = assertStopCall(args);
+        if (Objects.nonNull(intiList)) {
+            return intiList;
+        }
+
         return assertAndGetCommands(
                 AppCommandType.getExeNonPolymathCmds(), "Single execution command %s, " +
                         "should not be used as a Daemon system command. Check --help for system usages.", args);
+    }
+
+    public static Command[] assertStopCall(String... args) {
+        if (ArrayUtils.contains(args, Main.STOP_CMD)) {
+            Command stopCmd = new Command();
+            stopCmd.add("stop");
+
+            return new Command[]{stopCmd};
+        }
+
+        return null;
     }
 
     /**

@@ -61,6 +61,7 @@ public class ColorCache {
      * Automatically invoked after dependency injection via {@link PostConstruct}.
      */
     @PostConstruct
+    @SuppressWarnings("unused")
     private void setup() {
         this.cache = new Object[
                 this.getConfiguredAmount()][TOTAL_PROPERTIES];
@@ -248,11 +249,14 @@ public class ColorCache {
     }
 
     /**
-     * Clears all entries from the cache, resetting it to an empty state
-     * while retaining its configured capacity.
+     * Clears all entries from the cache, resetting it to an empty state while retaining its
+     * configured capacity, and {@link #unwatch()} the active process.
      */
     public synchronized void clear() {
-        this.cache = new Object[this.cache.length][3];
+        this.cache = new Object[
+                this.getConfiguredAmount()][TOTAL_PROPERTIES];
+
+        this.unwatch();
     }
 
     /**

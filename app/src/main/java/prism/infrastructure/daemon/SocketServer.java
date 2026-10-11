@@ -11,6 +11,7 @@ import java.net.StandardProtocolFamily;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.file.Path;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -25,6 +26,26 @@ import java.util.stream.Stream;
  * @see SocketStatusType
  */
 public class SocketServer implements AutoCloseable {
+
+    /**
+     * Owner-only permissions applied to the daemon socket, so only the user can call it.
+     */
+    public static final String SOCKET_PERMISSIONS = "rw-------";
+
+    /**
+     * File name of the daemon socket.
+     */
+    private static final String SOCKET_FILE = "prism.sock";
+
+    /**
+     * Environment variable holding the user runtime directory (set by systemd).
+     */
+    private static final String RUNTIME_DIR_ENV = "XDG_RUNTIME_DIR";
+
+    /**
+     * Directory used for the daemon socket when {@value #RUNTIME_DIR_ENV} is not set.
+     */
+    private static final String FALLBACK_DIR = "/tmp";
 
     /**
      * The current lifecycle state of the daemon socket server.
@@ -129,5 +150,21 @@ public class SocketServer implements AutoCloseable {
         } catch (IOException e) {
             throw new RuntimeException("Socket acceptance error.", e);
         }
+    }
+
+    /**
+     * Resolves the daemon socket path: {@code $XDG_RUNTIME_DIR/prism.sock}, falling back to
+     * {@code /tmp/prism.sock}. Clients must use this same path to reach the daemon.
+     *
+     * @return the daemon socket path
+     */
+    public static @NonNull Path getSocketPath() {
+        String runtimeDir = System.getenv(RUNTIME_DIR_ENV);
+
+        String dir = Objects.isNull(runtimeDir) || runtimeDir.isBlank()
+                ? FALLBACK_DIR
+                : runtimeDir;
+
+        return Path.of(dir, SOCKET_FILE);
     }
 }

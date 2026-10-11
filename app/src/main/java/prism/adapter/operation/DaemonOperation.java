@@ -2,6 +2,7 @@ package prism.adapter.operation;
 
 import lombok.extern.java.Log;
 import org.jspecify.annotations.NonNull;
+import prism.Main;
 import prism.adapter.cli.input.Command;
 import prism.adapter.cli.procedure.ProcedureCaller;
 import prism.application.component.ColorCache;
@@ -66,26 +67,6 @@ import java.util.logging.Level;
 public class DaemonOperation extends AppStartup {
 
     /**
-     * File name of the daemon socket.
-     */
-    private static final String SOCKET_FILE = "prism.sock";
-
-    /**
-     * Environment variable holding the user runtime directory (set by systemd).
-     */
-    private static final String RUNTIME_DIR_ENV = "XDG_RUNTIME_DIR";
-
-    /**
-     * Directory used for the daemon socket when {@value #RUNTIME_DIR_ENV} is not set.
-     */
-    private static final String FALLBACK_DIR = "/tmp";
-
-    /**
-     * Owner-only permissions applied to the daemon socket, so only the user can call it.
-     */
-    private static final String SOCKET_PERMISSIONS = "rw-------";
-
-    /**
      * The parsed CLI commands initializing this daemon operation.
      */
     private final Command[] commands;
@@ -105,11 +86,6 @@ public class DaemonOperation extends AppStartup {
      * shutdown hook.
      */
     private final AtomicBoolean stopped = new AtomicBoolean(false);
-
-    /**
-     * The resolved path where the daemon socket will be created.
-     */
-    private final Path socketPath = getSocketPath();
 
     /**
      * Reference to the background thread responsible for listening to external IPC signals.
@@ -140,22 +116,6 @@ public class DaemonOperation extends AppStartup {
      */
     public static void start(Command[] commands) {
         new DaemonOperation(commands).startDaemon();
-    }
-
-    /**
-     * Resolves the daemon socket path: {@code $XDG_RUNTIME_DIR/prism.sock}, falling back to
-     * {@code /tmp/prism.sock}. Clients must use this same path to reach the daemon.
-     *
-     * @return the daemon socket path
-     */
-    public static @NonNull Path getSocketPath() {
-        String runtimeDir = System.getenv(RUNTIME_DIR_ENV);
-
-        String dir = Objects.isNull(runtimeDir) || runtimeDir.isBlank()
-                ? FALLBACK_DIR
-                : runtimeDir;
-
-        return Path.of(dir, SOCKET_FILE);
     }
 
     /**
@@ -234,31 +194,34 @@ public class DaemonOperation extends AppStartup {
     /**
      * Opens and binds the daemon socket, restricting it to the current user, and marks the
      * server as {@link SocketStatusType#READY}.
-*
+     *
      * @param socketServer the server to open
      * @throws IllegalStateException if another daemon is running or the socket can not be
      *                               bound
      */
+    @SuppressWarnings("resource")
     private void openServer(@NonNull SocketServer socketServer) {
         this.assertNoRunningDaemon();
 
+        Path socketPath = SocketServer.getSocketPath();
+
         try {
-            Files.deleteIfExists(this.socketPath);
-
+            Files.deleteIfExists(socketPath);
             socketServer.open();
-            socketServer.getServerSocketChannel()
-                    .bind(UnixDomainSocketAddress.of(this.socketPath));
 
-            Files.setPosixFilePermissions(this.socketPath,
-                    PosixFilePermissions.fromString(SOCKET_PERMISSIONS));
+            socketServer.getServerSocketChannel()
+                    .bind(UnixDomainSocketAddress.of(socketPath));
+
+            Files.setPosixFilePermissions(socketPath,
+                    PosixFilePermissions.fromString(SocketServer.SOCKET_PERMISSIONS));
         } catch (IOException e) {
             socketServer.interrupt();
             throw new IllegalStateException("Could not open daemon " +
-                    "socket at %s: %s".formatted(this.socketPath, e.getMessage()), e);
+                    "socket at %s: %s".formatted(socketPath, e.getMessage()), e);
         }
 
         SocketServer.setSocketStatusType(SocketStatusType.READY);
-        log.info("Prism daemon listening for calls at %s".formatted(this.socketPath));
+        log.info("Prism daemon listening for calls at %s".formatted(socketPath));
     }
 
     /**
@@ -268,19 +231,21 @@ public class DaemonOperation extends AppStartup {
      * @throws IllegalStateException if another daemon is already running
      */
     private void assertNoRunningDaemon() {
-        if (!Files.exists(this.socketPath)) {
+        Path socketPath = SocketServer.getSocketPath();
+
+        if (!Files.exists(socketPath)) {
             return;
         }
 
         try (SocketChannel probe = SocketChannel.open(StandardProtocolFamily.UNIX)) {
-            probe.connect(UnixDomainSocketAddress.of(this.socketPath));
+            probe.connect(UnixDomainSocketAddress.of(socketPath));
         } catch (IOException e) {
-            log.info("Replacing stale daemon socket at %s".formatted(this.socketPath));
+            log.info("Replacing stale daemon socket at %s".formatted(socketPath));
             return;
         }
 
         throw new IllegalStateException(("Another Prism daemon is " +
-                "already running at %s").formatted(this.socketPath));
+                "already running at %s").formatted(socketPath));
     }
 
     /**
@@ -348,6 +313,13 @@ public class DaemonOperation extends AppStartup {
      * @throws IllegalArgumentException if the commands hold an invalid configuration
      */
     private void applyCommands(@NonNull Command[] callCommands) {
+        if (Objects.isNull(commands[0].getCommand())) {
+            if (Objects.equals(commands[0].getSubCommands()[0], Main.STOP_CMD)) {
+                this.shutdown();
+                return;
+            }
+        }
+
         DaemonContext context =
                 this.appContext.getClass(DaemonContext.class);
 
@@ -439,8 +411,8 @@ public class DaemonOperation extends AppStartup {
             prism = writeService.getPrism(imageColors);
         }
 
-        this.appContext.getClass(FileDataWriter.class)
-                .writeSpectrum(prism);
+        this.appContext.getClass(
+                FileDataWriter.class).writeSpectrum(prism);
 
         if (cacheActive && !cached) {
             cacheService.add(imagePath, prism);
@@ -557,6 +529,7 @@ public class DaemonOperation extends AppStartup {
      * Gracefully stops the daemon: stops accepting calls, waits for in-flight processing,
      * stops the listener and cache watcher, and removes the socket file. Runs once.
      */
+    @SuppressWarnings("resource")
     private void shutdown() {
         if (!this.stopped.compareAndSet(false, true)) {
             return;
@@ -590,11 +563,13 @@ public class DaemonOperation extends AppStartup {
             this.lock.unlock();
         }
 
+        Path socketPath = SocketServer.getSocketPath();
+
         try {
-            Files.deleteIfExists(this.socketPath);
+            Files.deleteIfExists(socketPath);
         } catch (IOException e) {
             log.log(Level.WARNING, "Could not remove daemon " +
-                    "socket file %s".formatted(this.socketPath), e);
+                    "socket file %s".formatted(socketPath), e);
         }
     }
 }
