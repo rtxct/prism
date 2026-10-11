@@ -57,8 +57,8 @@ public class Main {
             ProcedureCaller.assertCall(cmd);
 
             if (START_CMD.equalsIgnoreCase(cmd)) {
-                Command[] commands =
-                        ProcedureCaller.assertAndGetDaemonCall(Arrays.copyOfRange(args, 1, args.length));
+                Command[] commands = ProcedureCaller
+                        .assertAndGetDaemonCall(Arrays.copyOfRange(args, 1, args.length));
 
                 log.info("Daemon mode " +
                         "identified. Starting the process.");
