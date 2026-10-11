@@ -11,7 +11,7 @@ import prism.configuration.context.AbstractServiceContextConfiguration;
 import prism.configuration.context.AppContext;
 import prism.domain.model.Prism;
 import prism.domain.vo.ColorCluster;
-import prism.domain.vo.ColorScaleVo;
+import prism.domain.vo.ColorScale;
 import prism.domain.vo.Oklch;
 import prism.domain.vo.Roles;
 
@@ -107,14 +107,14 @@ public class WriteService {
     }
 
     /**
-     * Converts a base OKLCH color into a 10-step {@link ColorScaleVo}.
+     * Converts a base OKLCH color into a 10-step {@link ColorScale}.
      *
      * @param base the base OKLCH color
      * @return the generated color scale
      */
-    private @NonNull ColorScaleVo toScale(@NonNull Oklch base) {
+    private @NonNull ColorScale toScale(@NonNull Oklch base) {
         Integer[] spectrum = this.colorWriter.get().calculateSpectrum(base);
-        return ColorScaleVo.fromColorArray(this.formatColors(spectrum));
+        return ColorScale.fromColorArray(this.formatColors(spectrum));
     }
 
     /**

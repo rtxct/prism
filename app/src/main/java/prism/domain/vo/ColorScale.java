@@ -11,7 +11,7 @@ import org.jspecify.annotations.NonNull;
  * {@code "rgb(r, g, b)"}).
  */
 @Builder
-public record ColorScaleVo
+public record ColorScale
         (
                 String shade100,
                 String shade200,
@@ -34,8 +34,8 @@ public record ColorScaleVo
      * @param shades an array of at least 10 formatted hex/rgb color strings
      * @return a new {@code ColorScaleVo} populated with the color values
      */
-    public static @NonNull ColorScaleVo fromColorArray(@NonNull String[] shades) {
-        return ColorScaleVo.builder()
+    public static @NonNull ColorScale fromColorArray(@NonNull String[] shades) {
+        return ColorScale.builder()
                 .shade100(shades[0])
                 .shade200(shades[1])
                 .shade300(shades[2])

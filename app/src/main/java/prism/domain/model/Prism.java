@@ -2,12 +2,12 @@ package prism.domain.model;
 
 import lombok.Builder;
 import org.jspecify.annotations.NonNull;
-import prism.domain.vo.ColorScaleVo;
+import prism.domain.vo.ColorScale;
 
 /**
  * Domain model representing a color palette (spectrum) extracted from an image.
  * <p>
- * A Prism is composed of five {@link ColorScaleVo} roles, each capturing a different tonal
+ * A Prism is composed of five {@link ColorScale} roles, each capturing a different tonal
  * purpose within the palette:
  * <ul>
  *   <li><b>Lux</b> – grayscale tones</li>
@@ -30,27 +30,27 @@ public class Prism {
     /**
      * Grayscale (Lux)
      */
-    private @NonNull ColorScaleVo lux;
+    private @NonNull ColorScale lux;
 
     /**
      * Dominant color shade (core)
      */
-    private @NonNull ColorScaleVo core;
+    private @NonNull ColorScale core;
 
     /**
      * Secondary supporting (Wave)
      */
-    private @NonNull ColorScaleVo wave;
+    private @NonNull ColorScale wave;
 
     /**
      * Bright accent contrast (Flare)
      */
-    private @NonNull ColorScaleVo flare;
+    private @NonNull ColorScale flare;
 
     /**
      * Secondary accent sharpening (Spark)
      */
-    private @NonNull ColorScaleVo spark;
+    private @NonNull ColorScale spark;
 
     /**
      * Returns a formatted multi-line string representation of the prism palette. Each shade
