@@ -50,6 +50,7 @@ class TestListeningService {
         ListeningService.RETRY_INTERVAL = ORIGINAL_RETRY_INTERVAL;
 
         // Clear interrupted status if left set by interruption test
+        //noinspection ResultOfMethodCallIgnored
         Thread.interrupted();
     }
 

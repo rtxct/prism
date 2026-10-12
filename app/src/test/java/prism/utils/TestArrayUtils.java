@@ -203,8 +203,8 @@ class TestArrayUtils {
         @Test
         @DisplayName("should return first match when array contains duplicate keys")
         void shouldReturnFirstMatchWhenDuplicatesExist() {
-            String first = new String("dup");
-            String second = new String("dup");
+            String first = "dup";
+            String second = "dup";
             String[] array = new String[]{first, second};
             String result = ArrayUtils.get("dup", array);
             assertEquals("dup", result);
