@@ -2,6 +2,9 @@ plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     application
 
+    // Test Coverage
+    jacoco
+
     // Lombok
     id("io.freefair.lombok") version "9.5.0"
 }
@@ -59,9 +62,23 @@ application {
     // Define the main class for the application.
     mainClass = "prism.Main"
 }
+jacoco {
+    toolVersion = "0.8.15"
+}
 
-tasks.named<Test>("test") {
-    // Use JUnit Platform for unit tests.
+tasks.test {
     useJUnitPlatform()
     jvmArgs("-Dnet.bytebuddy.experimental=true")
+
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+    reports {
+        xml.required = false
+        csv.required = false
+        html.required = true
+
+        html.outputLocation = layout.projectDirectory.dir("jaCoCo")
+    }
 }
