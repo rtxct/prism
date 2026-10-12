@@ -18,7 +18,7 @@ import java.util.logging.Level;
 public class ListeningService {
 
     private static final int MAX_ATTEMPTS = 3;
-    private static final Duration RETRY_INTERVAL = Duration.ofSeconds(5);
+    static Duration RETRY_INTERVAL = Duration.ofSeconds(5);
 
     private final Supplier<SocketSubscriber> socketSubscriber;
 
