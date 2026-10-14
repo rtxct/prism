@@ -29,15 +29,15 @@ dependencies {
     compileOnly(libs.jspecify)
 
     // Lombok
-    compileOnly("org.projectlombok:lombok:1.18.46")
-    annotationProcessor("org.projectlombok:lombok:1.18.46")
+    compileOnly(libs.lombok)
+    annotationProcessor(libs.lombok)
 
     // Jackson Json Parser
-    implementation("tools.jackson.core:jackson-core:3.2.3")
-    implementation("tools.jackson.core:jackson-databind:3.2.3")
+    implementation(libs.jackson.core)
+    implementation(libs.jackson.databind)
 
     // WebP Image Support
-    implementation("com.twelvemonkeys.imageio:imageio-webp:3.10.1")
+    implementation(libs.imageio.webp)
 
     // ▗     ▗ ▘
     // ▜▘█▌▛▘▜▘▌▛▌▛▌
@@ -49,8 +49,12 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     // Mockito
-    testImplementation("org.mockito:mockito-core:5.16.0")
-    testImplementation("org.mockito:mockito-junit-jupiter:5.16.0")
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.junit.jupiter)
+
+    // Testcontainers
+    testImplementation(libs.testcontainers)
+    testImplementation(libs.testcontainers.junit.jupiter)
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
