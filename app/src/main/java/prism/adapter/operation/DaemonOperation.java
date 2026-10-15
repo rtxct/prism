@@ -313,8 +313,8 @@ public class DaemonOperation extends AppStartup {
      * @throws IllegalArgumentException if the commands hold an invalid configuration
      */
     private void applyCommands(@NonNull Command[] callCommands) {
-        if (Objects.isNull(commands[0].getCommand())) {
-            if (Objects.equals(commands[0].getSubCommands()[0], Main.STOP_CMD)) {
+        if (callCommands.length > 0 && Objects.isNull(callCommands[0].getCommand())) {
+            if (Objects.equals(callCommands[0].getSubCommands()[0], Main.STOP_CMD)) {
                 this.shutdown();
                 return;
             }

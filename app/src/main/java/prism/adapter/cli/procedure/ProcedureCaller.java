@@ -92,7 +92,7 @@ public class ProcedureCaller {
      * @throws prism.domain.exception.CommandNotFoundException if the command is unrecognized
      */
     public static void assertCall(String arg) {
-        if (Main.START_CMD.equalsIgnoreCase(arg)) {
+        if (Main.START_CMD.equalsIgnoreCase(arg) || Main.STOP_CMD.equalsIgnoreCase(arg)) {
             return;
         }
 
